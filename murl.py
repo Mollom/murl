@@ -1,7 +1,50 @@
 import oauth2 as oauth
+import httplib2, urllib
 from optparse import OptionParser
 
-usage = "usage: %prog [options] endpoint"
+class MyClient(oauth.Client):
+	def __init__ (self, consumer):
+		oauth.Client.__init__(self, consumer)
+
+	def request(self, uri, method="GET", body='', headers=None, redirections=httplib2.DEFAULT_MAX_REDIRECTS, connection_type=None):
+		if not isinstance(headers, dict):
+			headers = {}
+
+		# set the content type (text/plain for GET, )
+		if (method == "POST"):
+			DEFAULT_POST_CONTENT_TYPE = 'application/x-www-form-urlencoded'
+		elif (method == "GET"):
+			DEFAULT_POST_CONTENT_TYPE = 'text/plain'
+
+		headers['Content-Type'] = headers.get('Content-Type', DEFAULT_POST_CONTENT_TYPE)
+
+		is_form_encoded = headers.get('Content-Type') == 'application/x-www-form-urlencoded'
+
+		if is_form_encoded and body:
+			parameters = parse_qs(body)
+		else:
+			parameters = None
+
+		req = oauth.Request.from_consumer_and_token(self.consumer, 
+		token=self.token, http_method=method, http_url=uri, 
+		parameters=parameters, body=body, is_form_encoded=is_form_encoded)
+
+		req.sign_request(self.method, self.consumer, self.token)
+
+		schema, rest = urllib.splittype(uri)
+		if rest.startswith('//'):
+			hierpart = '//'
+		else:
+			hierpart = ''
+		host, rest = urllib.splithost(rest)
+
+		realm = schema + ':' + hierpart + host
+
+		headers.update(req.to_header(realm=realm))
+
+		return httplib2.Http.request(self, uri, method=method, body=body, headers=headers, redirections=redirections, connection_type=connection_type)
+
+usage = "usage: %prog [options] endpoint data"
 parser = OptionParser(usage)
 parser.add_option("-k", "--consumer_key",
                     action="store", dest="consumer_key",
@@ -19,18 +62,22 @@ parser.add_option("-p", "--post",
                     help="POST instead of GET")
 
 (options, args) = parser.parse_args()
-if len(args) != 1:
+if len(args) > 2:
     parser.error("incorrect number of arguments")
 
 request_url = args[0]
 
-consumer = oauth.Consumer(options.consumer_key, options.consumer_secret)
-client = oauth.Client(consumer)
+consumer = oauth.Consumer(key=options.consumer_key, secret=options.consumer_secret)
+client = MyClient(consumer)
+
+body = ''
+if (len(args) == 2):
+	body = args[1]
 
 if options.post:
-    resp, content = client.request(options.hostname + request_url, "POST")
+    resp, content = client.request(options.hostname + request_url, "POST", body=body, headers={'Content-Type' : 'text/plain'})
 else:
-    resp, content = client.request(options.hostname + request_url)
+    resp, content = client.request(options.hostname + request_url, body=body)
 
 print content
 
