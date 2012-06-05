@@ -11,7 +11,7 @@ parser.add_option("-s", "--consumer_secret",
                     help="Consumer secret for two legged OAuth")
 
 parser.add_option("-H", "--hostname",
-                    action="store", dest="hostname", default="http://xmlrpc2.mollom.com",
+                    action="store", dest="hostname", default="http://rest.mollom.com",
                     help="Hostname")
 
 parser.add_option("-p", "--post",
