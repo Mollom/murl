@@ -44,40 +44,42 @@ class MyClient(oauth.Client):
 
 		return httplib2.Http.request(self, uri, method=method, body=body, headers=headers, redirections=redirections, connection_type=connection_type)
 
-usage = "usage: %prog [options] endpoint data"
-parser = OptionParser(usage)
-parser.add_option("-k", "--consumer_key",
-                    action="store", dest="consumer_key",
-                    help="Consumer key for two legged OAuth")
-parser.add_option("-s", "--consumer_secret",
-                    action="store", dest="consumer_secret",
-                    help="Consumer secret for two legged OAuth")
+def __call__ (consumer_key, consumer_secret, hostname, request_url, body='', http_action='GET'):
+	consumer = oauth.Consumer(consumer_key, consumer_secret)
+	client = MyClient(consumer)
 
-parser.add_option("-H", "--hostname",
-                    action="store", dest="hostname", default="http://xmlrpc2.mollom.com",
-                    help="Hostname")
+	response, content = client.request(hostname + request_url, http_action, body=body, headers={'Content-Type' : 'text/plain'})
+	return content
 
-parser.add_option("-p", "--post",
-                    action="store_true", dest="post", default=False,
-                    help="POST instead of GET")
+if __name__ == "__main__":
+	usage = "usage: %prog [options] endpoint data"
+	parser = OptionParser(usage)
+	parser.add_option("-k", "--consumer_key",
+		            action="store", dest="consumer_key",
+		            help="Consumer key for two legged OAuth")
+	parser.add_option("-s", "--consumer_secret",
+		            action="store", dest="consumer_secret",
+		            help="Consumer secret for two legged OAuth")
 
-(options, args) = parser.parse_args()
-if len(args) > 2:
-    parser.error("incorrect number of arguments")
+	parser.add_option("-H", "--hostname",
+		            action="store", dest="hostname", default="http://xmlrpc2.mollom.com",
+		            help="Hostname")
 
-request_url = args[0]
+	parser.add_option("-p", "--post",
+		            action="store_true", dest="post", default=False,
+		            help="POST instead of GET")
 
-consumer = oauth.Consumer(key=options.consumer_key, secret=options.consumer_secret)
-client = MyClient(consumer)
+	(options, args) = parser.parse_args()
+	if len(args) > 2:
+	    parser.error("incorrect number of arguments")
 
-body = ''
-if (len(args) == 2):
-	body = args[1]
+	body = ''
+	if (len(args) == 2):
+		body = args[1]
 
-if options.post:
-    resp, content = client.request(options.hostname + request_url, "POST", body=body, headers={'Content-Type' : 'text/plain'})
-else:
-    resp, content = client.request(options.hostname + request_url, body=body)
-
-print content
+	request_url = args[0]
+	if options.post:
+		print __call__(options.consumer_key, options.consumer_secret, options.hostname, request_url, body, 'POST')
+	else:
+		print __call__(options.consumer_key, options.consumer_secret, options.hostname, request_url, body, 'GET')
 
