@@ -1,6 +1,7 @@
 import oauth2 as oauth
 import httplib2, urllib
 from optparse import OptionParser
+from optparse import OptionGroup
 
 class MyClient(oauth.Client):
 	def __init__ (self, consumer):
@@ -52,26 +53,30 @@ def __call__ (consumer_key, consumer_secret, hostname, request_url, body='', htt
 	return content
 
 if __name__ == "__main__":
-	usage = "usage: %prog [options] endpoint data"
-	parser = OptionParser(usage)
-	parser.add_option("-k", "--consumer_key",
+	usage = "%prog <options> <endpoint> [data]"
+	parser = OptionParser(usage=usage)
+	group = OptionGroup(parser, "Required options")
+	group.add_option("-k", "--consumer_key",
 		            action="store", dest="consumer_key",
-		            help="Consumer key for two legged OAuth")
-	parser.add_option("-s", "--consumer_secret",
+		            help="Consumer key for two-legged OAuth. (Public key)")
+	group.add_option("-s", "--consumer_secret",
 		            action="store", dest="consumer_secret",
-		            help="Consumer secret for two legged OAuth")
+		            help="Consumer secret for two-legged OAuth. (Private key)")
+	parser.add_option_group(group)
 
 	parser.add_option("-H", "--hostname",
 		            action="store", dest="hostname", default="http://rest.mollom.com",
-		            help="Hostname")
-
+		            help="Target hostname. Defaults to %default")
 	parser.add_option("-p", "--post",
 		            action="store_true", dest="post", default=False,
-		            help="POST instead of GET")
+		            help="Use POST instead of GET. Defaults to GET.")
 
 	(options, args) = parser.parse_args()
+	if len(args) == 0 or not options.consumer_key or not options.consumer_secret:
+	    parser.print_help()
+	    exit(2)
 	if len(args) > 2:
-	    parser.error("incorrect number of arguments")
+	    parser.error("Too many arguments.")
 
 	body = ''
 	if (len(args) == 2):
