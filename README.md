@@ -9,6 +9,7 @@
 1. Add `/path/to/pythonX` and `/path/to/pythonX/scripts` directories to your PATH environment variable.
 1. Download and install Setuptools from https://pypi.python.org/pypi/setuptools via `ez_setup.py`:
 
+        $ wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py
         $ python ez_setup.py
 
 1. Download and install Pip from https://pypi.python.org/pypi/pip via `get-pip.py`:
